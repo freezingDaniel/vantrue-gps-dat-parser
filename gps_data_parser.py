@@ -306,10 +306,14 @@ def _slider_html(n_points: int) -> str:
                 z-index:1000;background:white;padding:10px 12px;border:1px solid grey;
                 border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);
                 width:80vw;font-family:sans-serif;">
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;position:relative;">
         <label for="timeSlider" style="font-weight:600;white-space:nowrap;">Time</label>
-        <input id="timeSlider" type="range" min="0" max="{n_points - 1}"
-               value="{n_points - 1}" step="1" style="flex:1;min-width:0;">
+        <div style="position:relative;flex:1;min-width:0;">
+          <input id="timeSlider" type="range" min="0" max="{n_points - 1}"
+                 value="{n_points - 1}" step="1" style="width:100%;margin:0;">
+          <div id="segmentMarkers"
+               style="position:absolute;left:0;right:0;top:50%;height:10px;pointer-events:none;"></div>
+        </div>
         <span id="timeLabel" style="white-space:nowrap;font-size:13px;"></span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;
@@ -336,11 +340,52 @@ def _script_html(track_points: list[dict], map_name: str) -> str:
         const speedLabel     = document.getElementById('speedLabel');
         const altLabel       = document.getElementById('altLabel');
         const roleLabel      = document.getElementById('roleLabel');
+        const markerRail     = document.getElementById('segmentMarkers');
 
         const WAYPOINT_RADIUS  = {WAYPOINT_RADIUS};
         const WAYPOINT_OPACITY = {WAYPOINT_OPACITY};
         const POLYLINE_WEIGHT  = {POLYLINE_WEIGHT};
         const POLYLINE_OPACITY = {POLYLINE_OPACITY};
+
+        const segmentStarts = trackData
+            .map((p, idx) => p.after_break ? idx : null)
+            .filter(idx => idx !== null);
+
+        function renderSegmentMarkers() {{
+            markerRail.innerHTML = '';
+            if (trackData.length <= 1) return;
+
+            segmentStarts.forEach((idx, i) => {{
+                const dot = document.createElement('button');
+                const leftPct = (idx / (trackData.length - 1)) * 100;
+
+                dot.type = 'button';
+                dot.title = 'Skip to segment start ' + (i + 1);
+                dot.setAttribute('aria-label', dot.title);
+                dot.style.cssText = [
+                    'position:absolute',
+                    'left:' + leftPct + '%',
+                    'top:0',
+                    'transform:translateX(-50%)',
+                    'width:12px',
+                    'height:12px',
+                    'border-radius:50%',
+                    'border:2px solid #fff',
+                    'background:#2ca02c',
+                    'box-shadow:0 0 0 2px rgba(0,0,0,0.20)',
+                    'cursor:pointer',
+                    'pointer-events:auto',
+                    'padding:0'
+                ].join(';');
+
+                dot.addEventListener('click', function() {{
+                    slider.value = String(idx);
+                    updateTrack(idx);
+                }});
+
+                markerRail.appendChild(dot);
+            }});
+        }}
 
         let drawnLayers = [];
         let isInitialLoad = true;
@@ -538,6 +583,7 @@ def _script_html(track_points: list[dict], map_name: str) -> str:
         }}
 
         slider.addEventListener('input', e => updateTrack(parseInt(e.target.value, 10)));
+        renderSegmentMarkers();
         updateTrack(parseInt(slider.value, 10));
 
         // Fit map to full track extent on load
