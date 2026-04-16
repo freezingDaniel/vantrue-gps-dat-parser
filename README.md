@@ -1,4 +1,61 @@
 # vantrue-gps-dat-parser
-parse the yyyymmdd.dat files of Vantrue N4 Pro and create html view
+
+Parse the `yyyymmdd.dat` files of a **Vantrue N4 Pro** and create an HTML view of the GPS track.
 
 <img width="1128" height="1128" alt="Example Nürburgring" src="https://github.com/user-attachments/assets/49aad546-6d52-4170-83ef-445dc06c2107" />
+
+## File format
+
+The `.dat` file appears to use this format:
+```text
+YYYYMMDDHHMMSS,latitude,N,longitude,E,speed_in_knots,altitude_in_meters
+```
+The last two values took me quite some time to figure out, so I wanted to share that here in case that is all you were looking for.
+
+## What it does
+
+- Reads one `.dat` file or a directory of `.dat` files
+- Parses GPS timestamps and coordinates
+- Converts speed from knots to km/h
+- Generates an interactive HTML map with:
+  - speed-colored track segments
+  - markers for segment start/end
+  - waypoints
+  - a time slider to inspect the track step by step
+  - total distance display
+
+## Usage
+
+Run the parser on a file or directory:
+```bash
+python gps_data_parser.py /path/to/gps/files
+```
+If no path is provided, the script uses the default GPS directory configured in the code.
+
+To overwrite existing HTML output files:
+```bash
+python gps_data_parser.py /path/to/gps/files --overwrite
+```
+## Output
+
+For each input file, the script creates an HTML file next to it with the suffix:
+```text
+_map.html
+```
+Example:
+```text
+20240101.dat -> 20240101_map.html
+```
+## Requirements
+
+Install the Python dependencies listed in `requirements.txt`.
+
+## Notes
+
+- The parser is tailored to Vantrue N4 Pro GPS `.dat` files.
+- Latitude/longitude direction fields are respected for `N/S` and `E/W`.
+- Speed values are shown in both knots and km/h.
+- Altitude is displayed in meters.
+
+
+# Vibecoded, though tested and working on my system, use at your own risk
