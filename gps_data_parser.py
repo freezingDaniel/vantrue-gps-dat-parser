@@ -43,18 +43,38 @@ def haversine_series(
 
 
 def compute_thresholded_distance(df: pd.DataFrame) -> tuple[pd.Series, float]:
+    if len(df) == 0:
+        return pd.Series(dtype=float), 0.0
     if len(df) == 1:
         return pd.Series([0.0], index=df.index), 0.0
 
-    lat1 = df["lat"].iloc[:-1].reset_index(drop=True)
-    lon1 = df["lon"].iloc[:-1].reset_index(drop=True)
-    lat2 = df["lat"].iloc[1:].reset_index(drop=True)
-    lon2 = df["lon"].iloc[1:].reset_index(drop=True)
+    cumulative = np.zeros(len(df), dtype=float)
 
-    segment_km = haversine_series(lat1, lon1, lat2, lon2)
-    counted = np.where(segment_km > MIN_MOVEMENT_KM, segment_km, 0.0)
-    cumulative = np.concatenate([[0.0], np.cumsum(counted)])
-    return pd.Series(cumulative, index=df.index), float(counted.sum())
+    accepted_idx = 0
+    total_km = 0.0
+
+    for i in range(1, len(df)):
+        lat1 = df["lat"].iloc[accepted_idx]
+        lon1 = df["lon"].iloc[accepted_idx]
+        lat2 = df["lat"].iloc[i]
+        lon2 = df["lon"].iloc[i]
+
+        dist_km = float(
+            haversine_series(
+                pd.Series([lat1]),
+                pd.Series([lon1]),
+                pd.Series([lat2]),
+                pd.Series([lon2]),
+            )[0]
+        )
+
+        if dist_km > MIN_MOVEMENT_KM:
+            total_km += dist_km
+            accepted_idx = i
+
+        cumulative[i] = total_km
+
+    return pd.Series(cumulative, index=df.index), total_km
 
 
 # ---------------------------------------------------------------------------
