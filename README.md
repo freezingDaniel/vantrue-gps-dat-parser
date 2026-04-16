@@ -70,4 +70,5 @@ Two constants control how the track is simplified before it is drawn:
 - Altitude is displayed in meters.
 
 
-# Vibecoded, though tested and working on my system, use at your own risk
+# Vibecoded, use at your own risk
+I use it and haven't had any issues so far; your mileage (pun intended) may vary.
